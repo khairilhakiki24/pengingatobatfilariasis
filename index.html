@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengingat Obat Filariasis v6</title>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* CSS Reset and Basic Setup */
+        :root {
+            --primary-color: #27ae60;
+            --secondary-color: #2980b9;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --background-color: #f0f4f8;
+            --card-background: #ffffff;
+            --text-color: #333333;
+            --light-text-color: #7f8c8d;
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --border-radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .app-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .app-header p { font-size: 0.9rem; opacity: 0.9; }
+
+        .calendar-container { padding: 1.5rem; border-bottom: 1px solid #eee; }
+
+        .month-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .month-nav { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--secondary-color); transition: transform 0.2s; }
+        .month-nav:hover { transform: scale(1.2); }
+        #currentMonthYear { font-size: 1.2rem; font-weight: 600; color: var(--primary-color); }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+        .calendar-day-name { font-weight: 600; font-size: 0.8rem; text-align: center; color: var(--light-text-color); margin-bottom: 0.5rem; }
+
+        .calendar-day {
+            display: flex; justify-content: center; align-items: center; height: 48px;
+            border-radius: 50%; cursor: pointer; transition: all 0.3s ease;
+            position: relative; font-weight: 600; border: 2px solid transparent;
+        }
+        .calendar-day.not-current-month { color: #ccc; cursor: default; }
+        .calendar-day:not(.not-current-month):hover { background-color: #e0eaf1; }
+        .calendar-day.today { border-color: var(--primary-color); color: var(--primary-color); background-color: #e6f7f0; }
+
+        .calendar-day.has-alarm::after, .calendar-day.is-taken::after {
+            font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 0.7rem; color: white;
+            border-radius: 50%; width: 18px; height: 18px; position: absolute;
+            top: 2px; right: 2px; display: flex; justify-content: center; align-items: center;
+            animation: bounce-in 0.5s ease;
+        }
+        .calendar-day.has-alarm::after { content: '\f0f3'; background-color: var(--secondary-color); }
+        .calendar-day.is-taken::after { content: '\f00c'; background-color: var(--success-color); }
+        @keyframes bounce-in { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        .schedule-list-container { padding: 1.5rem; }
+        .schedule-list-container h3 { text-align: center; color: var(--primary-color); margin-bottom: 1rem; font-size: 1.2rem; }
+        #scheduleList { list-style: none; max-height: 300px; overflow-y: auto; padding-right: 10px; }
+        
+        .schedule-item {
+            background: #f9f9f9; border-left: 5px solid var(--secondary-color); padding: 1rem;
+            border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center;
+            justify-content: space-between; transition: all 0.3s ease; cursor: pointer;
+        }
+        .schedule-item:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .schedule-item.is-taken { border-left-color: var(--success-color); background-color: #f1fef5; }
+        .schedule-item.is-taken .schedule-info .medicine-name { text-decoration: line-through; }
+        .schedule-item.is-recurring { border-left-color: var(--warning-color); }
+
+        .schedule-info .medicine-name { font-weight: 600; font-size: 1.1rem; }
+        .schedule-info .date { font-size: 0.85rem; color: var(--light-text-color); }
+        .schedule-info .notes { font-size: 0.85rem; color: var(--light-text-color); font-style: italic; margin-top: 4px; }
+        
+        .schedule-status i { font-size: 1.5rem; color: var(--secondary-color); }
+        .schedule-item.is-taken .schedule-status i { color: var(--success-color); }
+        .schedule-item.is-recurring .schedule-status i { color: var(--warning-color); }
+        #no-alarms { text-align: center; color: var(--light-text-color); padding: 2rem 0; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6);
+            display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden;
+            transition: all 0.3s ease; z-index: 1000;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: var(--card-background); padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 90%; max-width: 380px; text-align: center;
+            transform: scale(0.9); transition: all 0.3s ease;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-content h2 { margin-bottom: 0.5rem; color: var(--primary-color); }
+        .modal-content p { margin-bottom: 1.5rem; color: var(--light-text-color); }
+
+        .input-group { margin-bottom: 1.5rem; }
+        .input-group input, .input-group textarea {
+            width: 100%; padding: 0.75rem; border: 2px solid #ddd;
+            border-radius: 10px; font-size: 1rem;
+        }
+        #timeInput { font-size: 1.5rem; text-align: center; cursor: pointer; }
+        #notesInput { resize: vertical; min-height: 80px; margin-top: 1rem; }
+        
+        .recurrence-options { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .recurrence-options label {
+            padding: 0.5rem 1rem; border: 2px solid #ddd; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .recurrence-options input { display: none; }
+        .recurrence-options input:checked + label {
+            background-color: var(--primary-color); color: white; border-color: var(--primary-color);
+        }
+
+        .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        .modal-btn { flex: 1; padding: 0.75rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+        .btn-save { background-color: var(--primary-color); color: white; }
+        .btn-save:hover { background-color: #218c54; }
+        .btn-delete { background-color: var(--danger-color); color: white; }
+        .btn-delete:hover { background-color: #c0392b; }
+        .btn-close { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: var(--light-text-color); cursor: pointer; }
+        
+        #confirmModal .modal-content { max-width: 320px; }
+        #confirmModal p { font-size: 1.1rem; line-height: 1.5; }
+
+        .alarm-notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-200%);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white;
+            padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow);
+            z-index: 2000; text-align: center; width: 90%; max-width: 380px;
+            transition: transform 0.5s ease-in-out;
+        }
+        .alarm-notification.show { transform: translateX(-50%) translateY(0); }
+        .alarm-icon { font-size: 3rem; margin-bottom: 1rem; animation: ring 1.5s infinite; }
+        @keyframes ring { 0% { transform: rotate(0); } 10% { transform: rotate(30deg); } 20% { transform: rotate(-28deg); } 30% { transform: rotate(34deg); } 40% { transform: rotate(-32deg); } 50% { transform: rotate(30deg); } 60% { transform: rotate(-28deg); } 70% { transform: rotate(34deg); } 80% { transform: rotate(-32deg); } 90% { transform: rotate(30deg); } 100% { transform: rotate(0); } }
+        .alarm-notification h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        #alarmNote { font-style: italic; opacity: 0.9; margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 8px; }
+        .notification-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+        .btn-dismiss, .btn-taken { flex: 1; background: rgba(255,255,255,0.3); border: 1px solid white; color: white; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .btn-taken { background: rgba(46, 204, 113, 0.8); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Pengingat Obat</h1>
+            <p>Jadwal Minum Obat Filariasis</p>
+        </header>
+        <main>
+            <div class="calendar-container">
+                <div class="month-header">
+                    <button class="month-nav" id="prevMonthBtn"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="currentMonthYear"></h2>
+                    <button class="month-nav" id="nextMonthBtn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid" id="calendarGridNames">
+                    <div class="calendar-day-name">Min</div><div class="calendar-day-name">Sen</div><div class="calendar-day-name">Sel</div><div class="calendar-day-name">Rab</div><div class="calendar-day-name">Kam</div><div class="calendar-day-name">Jum</div><div class="calendar-day-name">Sab</div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+            <div class="schedule-list-container">
+                <h3>Jadwal Pengingat</h3>
+                <ul id="scheduleList"></ul>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for setting the alarm -->
+    <div class="modal-overlay" id="alarmModal">
+        <div class="modal-content">
+            <button class="btn-close" id="closeModalBtn">&times;</button>
+            <h2 id="modalTitle">Atur Pengingat</h2>
+            <p id="modalDateText"></p>
+            <div class="input-group">
+                <input type="text" id="medicineInput" placeholder="Nama Obat (contoh: Paracetamol)">
+            </div>
+            <div class="input-group">
+                <input type="time" id="timeInput" required>
+            </div>
+            <div class="recurrence-options">
+                <input type="radio" id="recur-none" name="recurrence" value="none" checked>
+                <label for="recur-none">Hanya Hari Ini</label>
+                <input type="radio" id="recur-daily" name="recurrence" value="daily">
+                <label for="recur-daily">Setiap Hari</label>
+            </div>
+            <div class="input-group">
+                <textarea id="notesInput" placeholder="Tambahkan catatan... (contoh: setelah makan)"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-save" id="saveAlarmBtn">Simpan</button>
+                <button class="modal-btn btn-delete" id="deleteAlarmBtn">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification for when alarm goes off -->
+    <div class="alarm-notification" id="alarmNotification">
+        <div class="alarm-icon"><i class="fas fa-bell"></i></div>
+        <h3 id="alarmMedicineName">Waktunya Minum Obat!</h3>
+        <p>Jangan lupa untuk kesehatan Anda.</p>
+        <div id="alarmNote"></div>
+        <div class="notification-actions">
+            <button class="btn-dismiss" id="dismissAlarmBtn">Tutup</button>
+            <button class="btn-taken" id="markAsTakenBtn">Tandai Sudah Minum</button>
+        </div>
+    </div>
+    
+    <!-- Custom Alert/Confirm Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-content">
+            <p id="confirmModalText"></p>
+            <div class="modal-actions" id="confirmModalActions">
+                <!-- Buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM ELEMENTS ---
+            const calendarGrid = document.getElementById('calendarGrid');
+            const currentMonthYearEl = document.getElementById('currentMonthYear');
+            const prevMonthBtn = document.getElementById('prevMonthBtn');
+            const nextMonthBtn = document.getElementById('nextMonthBtn');
+            const alarmModal = document.getElementById('alarmModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const saveAlarmBtn = document.getElementById('saveAlarmBtn');
+            const deleteAlarmBtn = document.getElementById('deleteAlarmBtn');
+            const medicineInput = document.getElementById('medicineInput');
+            const timeInput = document.getElementById('timeInput');
+            const notesInput = document.getElementById('notesInput');
+            const modalDateText = document.getElementById('modalDateText');
+            const alarmNotification = document.getElementById('alarmNotification');
+            const dismissAlarmBtn = document.getElementById('dismissAlarmBtn');
+            const markAsTakenBtn = document.getElementById('markAsTakenBtn');
+            const alarmNoteEl = document.getElementById('alarmNote');
+            const alarmMedicineNameEl = document.getElementById('alarmMedicineName');
+            const scheduleList = document.getElementById('scheduleList');
+            const confirmModal = document.getElementById('confirmModal');
+            const confirmModalText = document.getElementById('confirmModalText');
+            const confirmModalActions = document.getElementById('confirmModalActions');
+
+            // --- STATE & DB ---
+            let db;
+            let audioCtx;
+            let currentEditingAlarm = null;
+            const today = new Date();
+            let currentMonth = today.getMonth();
+            let currentYear = today.getFullYear();
+            const DB_NAME = 'filariasisReminderDB_v6';
+            const ALARM_STORE_NAME = 'alarms';
+            const LOG_STORE_NAME = 'taken_logs';
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+            // --- INITIALIZE APP ---
+            function init() {
+                setupDatabase();
+                setInterval(checkAlarms, 10000);
+            }
+
+            // --- DATABASE (IndexedDB) ---
+            function setupDatabase() {
+                const request = indexedDB.open(DB_NAME, 2);
+                request.onerror = (e) => console.error("Database error:", e.target.errorCode);
+                request.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    if (!db.objectStoreNames.contains(ALARM_STORE_NAME)) {
+                        db.createObjectStore(ALARM_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains(LOG_STORE_NAME)) {
+                        const logStore = db.createObjectStore(LOG_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        logStore.createIndex('logId', ['alarmId', 'date'], { unique: true });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    console.log("Database ready!");
+                    // CRITICAL: Only add listeners and refresh UI after DB is ready.
+                    addEventListeners();
+                    refreshUI();
+                };
+            }
+            
+            function getStore(storeName, mode) {
+                if (!db) {
+                    console.error("Database is not ready.");
+                    return null;
+                }
+                return db.transaction(storeName, mode).objectStore(storeName);
+            }
+
+            // --- CRUD Operations ---
+            function saveAlarm(alarmData) {
+                const store = getStore(ALARM_STORE_NAME, 'readwrite');
+                if (!store) return;
+                const request = alarmData.id ? store.put(alarmData) : store.add(alarmData);
+                request.onsuccess = () => {
+                    console.log("Alarm saved successfully");
+                    refreshUI();
+                    closeModal();
+                };
+                request.onerror = (e) => console.error("Error saving alarm:", e.target.error);
+            }
+
+            function deleteAlarm(id) {
+                const tx = db.transaction([ALARM_STORE_NAME, LOG_STORE_NAME], 'readwrite');
+                const alarmStore = tx.objectStore(ALARM_STORE_NAME);
+                const logStore = tx.objectStore(LOG_STORE_NAME);
+
+                alarmStore.delete(id);
+
+                // Delete associated logs
+                const logIndex = logStore.index('logId');
+                const range = IDBKeyRange.bound([id, ''], [id, '\uffff']);
+                const cursorReq = logIndex.openCursor(range);
+                cursorReq.onsuccess = e => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        cursor.delete();
+                        cursor.continue();
+                    }
+                };
+
+                tx.oncomplete = () => {
+                    console.log("Alarm and its logs deleted");
+                    refreshUI();
+                    closeModal();
+                };
+            }
+            
+            function getAlarm(id, callback) {
+                const store = getStore(ALARM_STORE_NAME, 'readonly');
+                if (!store) return;
+                store.get(id).onsuccess = (e) => callback(e.target.result);
+            }
+
+            function getAllData(callback) {
+                if (!db) return;
+                const tx = db.transaction([ALARM_STORE_NAME, LOG_STORE_NAME], 'readonly');
+                const alarmsReq = tx.objectStore(ALARM_STORE_NAME).getAll();
+                const logsReq = tx.objectStore(LOG_STORE_NAME).getAll();
+
+                Promise.all([
+                    new Promise(resolve => alarmsReq.onsuccess = () => resolve(alarmsReq.result)),
+                    new Promise(resolve => logsReq.onsuccess = () => resolve(logsReq.result))
+                ]).then(([alarms, logs]) => {
+                    callback(alarms, logs);
+                });
+            }
+            
+            function markAlarmAsTaken(id, dateString) {
+                getAlarm(id, alarm => {
+                    if (!alarm) return;
+                    if (alarm.recurring === 'daily') {
+                        const logStore = getStore(LOG_STORE_NAME, 'readwrite');
+                        if (!logStore) return;
+                        logStore.add({ alarmId: id, date: dateString });
+                    } else {
+                        alarm.taken = true;
+                        saveAlarm(alarm);
+                    }
+                    dismissAlarm();
+                    refreshUI();
+                });
+            }
+
+            // --- UI REFRESH ---
+            function refreshUI() {
+                if (!db) return;
+                getAllData((alarms, logs) => {
+                    generateCalendar(currentMonth, currentYear, alarms, logs);
+                    displayScheduleList(alarms, logs);
+                });
+            }
+
+            // --- CALENDAR ---
+            function generateCalendar(month, year, alarms, logs) {
+                calendarGrid.innerHTML = '';
+                currentMonthYearEl.textContent = `${monthNames[month]} ${year}`;
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                for (let i = 0; i < firstDay; i++) { calendarGrid.insertAdjacentHTML('beforeend', `<div class="calendar-day not-current-month"></div>`); }
+
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.classList.add('calendar-day');
+                    dayElement.textContent = i;
+                    const dateString = `${year}-${month}-${i}`;
+                    dayElement.dataset.date = dateString;
+
+                    if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) dayElement.classList.add('today');
+
+                    const dailyAlarms = alarms.filter(a => a.recurring === 'daily');
+                    const singleAlarms = alarms.filter(a => a.date === dateString);
+                    const alarmsForDay = [...singleAlarms, ...dailyAlarms];
+
+                    if (alarmsForDay.length > 0) {
+                        const allTaken = alarmsForDay.every(a => {
+                            if (a.recurring === 'daily') {
+                                return logs.some(l => l.alarmId === a.id && l.date === dateString);
+                            }
+                            return a.taken;
+                        });
+                        dayElement.classList.add(allTaken ? 'is-taken' : 'has-alarm');
+                    }
+                    
+                    dayElement.addEventListener('click', () => openModal({ date: dateString }));
+                    calendarGrid.appendChild(dayElement);
+                }
+            }
+            
+            // --- SCHEDULE LIST ---
+            function displayScheduleList(alarms, logs) {
+                scheduleList.innerHTML = '';
+                if (alarms.length === 0) {
+                    scheduleList.innerHTML = `<p id="no-alarms">Belum ada pengingat yang diatur.</p>`;
+                    return;
+                }
+
+                const displayAlarms = [...alarms];
+                displayAlarms.sort((a, b) => {
+                    const dateA = a.recurring === 'daily' ? new Date(8640000000000000) : new Date(a.date.replace(/-/g, '/'));
+                    const dateB = b.recurring === 'daily' ? new Date(8640000000000000) : new Date(b.date.replace(/-/g, '/'));
+                    return dateA - dateB || a.time.localeCompare(b.time);
+                });
+
+                displayAlarms.forEach(alarm => {
+                    const [year, month, day] = alarm.date.split('-');
+                    const dateText = alarm.recurring === 'daily' ? `Setiap Hari` : `${day} ${monthNames[parseInt(month)]} ${year}`;
+                    
+                    let itemClass = 'schedule-item';
+                    let iconClass = 'fa-solid fa-bell';
+                    
+                    if (alarm.taken) {
+                        itemClass += ' is-taken';
+                        iconClass = 'fa-solid fa-check-circle';
+                    } else if (alarm.recurring === 'daily') {
+                        itemClass += ' is-recurring';
+                        iconClass = 'fa-solid fa-repeat';
+                    }
+
+                    const itemHTML = `
+                        <li class="${itemClass}" data-id="${alarm.id}">
+                            <div class="schedule-info">
+                                <div class="medicine-name">${alarm.medicine || 'Tanpa Nama'}</div>
+                                <div class="date">${dateText} - ${alarm.time}</div>
+                                ${alarm.notes ? `<div class="notes">${alarm.notes}</div>` : ''}
+                            </div>
+                            <div class="schedule-status"><i class="${iconClass}"></i></div>
+                        </li>`;
+                    scheduleList.insertAdjacentHTML('beforeend', itemHTML);
+                });
+                
+                document.querySelectorAll('.schedule-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        getAlarm(parseInt(item.dataset.id), openModal);
+                    });
+                });
+            }
+
+            // --- MODAL ---
+            function openModal(alarm) {
+                currentEditingAlarm = alarm;
+                const isNew = !alarm.id;
+                
+                modalTitle.textContent = isNew ? "Pengingat Baru" : "Edit Pengingat";
+                const [year, month, day] = alarm.date.split('-');
+                modalDateText.textContent = `${day} ${monthNames[parseInt(month)]} ${year}`;
+                
+                medicineInput.value = alarm.medicine || '';
+                timeInput.value = alarm.time || '08:00';
+                notesInput.value = alarm.notes || '';
+                document.querySelector(`input[name="recurrence"][value="${alarm.recurring || 'none'}"]`).checked = true;
+                
+                deleteAlarmBtn.style.display = isNew ? 'none' : 'block';
+                alarmModal.classList.add('show');
+            }
+
+            function closeModal() {
+                alarmModal.classList.remove('show');
+                currentEditingAlarm = null;
+            }
+
+            // --- CUSTOM ALERT/CONFIRM ---
+            function showConfirmation(text, onConfirm) {
+                confirmModalText.textContent = text;
+                confirmModalActions.innerHTML = `
+                    <button class="modal-btn btn-delete" id="confirmBtnYes">Ya</button>
+                    <button class="modal-btn" id="confirmBtnNo" style="background-color: #bdc3c7;">Tidak</button>
+                `;
+                confirmModal.classList.add('show');
+
+                document.getElementById('confirmBtnYes').onclick = () => {
+                    onConfirm();
+                    hideConfirmation();
+                };
+                document.getElementById('confirmBtnNo').onclick = hideConfirmation;
+            }
+            
+            function showAlert(text) {
+                 confirmModalText.textContent = text;
+                 confirmModalActions.innerHTML = `<button class="modal-btn btn-save" id="alertBtnOk">OK</button>`;
+                 confirmModal.classList.add('show');
+                 document.getElementById('alertBtnOk').onclick = hideConfirmation;
+            }
+
+            function hideConfirmation() {
+                confirmModal.classList.remove('show');
+            }
+
+            // --- ALARM LOGIC & SOUND ---
+            function checkAlarms() {
+                if (!db) return;
+                const now = new Date();
+                const todayStr = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+                const currentTime = now.toTimeString().substring(0, 5);
+
+                getAllData((alarms, logs) => {
+                    const activeAlarms = alarms.filter(alarm => {
+                        if (alarm.recurring === 'daily') {
+                            const hasBeenTakenToday = logs.some(l => l.alarmId === alarm.id && l.date === todayStr);
+                            return !hasBeenTakenToday;
+                        }
+                        return alarm.date === todayStr && !alarm.taken;
+                    });
+
+                    activeAlarms.forEach(alarm => {
+                        if (alarm.time === currentTime) {
+                            const lastFired = sessionStorage.getItem('lastAlarmFired');
+                            if (lastFired !== `${alarm.id}-${currentTime}`) {
+                                triggerAlarm(alarm);
+                                sessionStorage.setItem('lastAlarmFired', `${alarm.id}-${currentTime}`);
+                            }
+                        }
+                    });
+                });
+            }
+
+            function triggerAlarm(alarm) {
+                playAlarmSound();
+                alarmMedicineNameEl.textContent = alarm.medicine || "Waktunya Minum Obat!";
+                alarmNoteEl.style.display = alarm.notes ? 'block' : 'none';
+                alarmNoteEl.textContent = alarm.notes || '';
+                
+                markAsTakenBtn.dataset.id = alarm.id;
+                markAsTakenBtn.dataset.date = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+                
+                alarmNotification.classList.add('show');
+            }
+
+            function dismissAlarm() {
+                alarmNotification.classList.remove('show');
+                if (audioCtx) { audioCtx.close(); audioCtx = null; }
+            }
+            
+            function playAlarmSound() {
+                if (audioCtx) audioCtx.close();
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.value = 880;
+                const now = audioCtx.currentTime; g.gain.setValueAtTime(0, now);
+                for (let i = 0; i < 5; i++) { g.gain.linearRampToValueAtTime(1, now + i * 0.5); g.gain.linearRampToValueAtTime(0, now + i * 0.5 + 0.25); }
+                o.start(now); o.stop(now + 3);
+            }
+
+            // --- EVENT LISTENERS ---
+            function addEventListeners() {
+                prevMonthBtn.addEventListener('click', () => {
+                    currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+                    refreshUI();
+                });
+                nextMonthBtn.addEventListener('click', () => {
+                    currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+                    refreshUI();
+                });
+
+                closeModalBtn.addEventListener('click', closeModal);
+                
+                saveAlarmBtn.addEventListener('click', () => {
+                    if (!timeInput.value || !medicineInput.value) {
+                        showAlert("Nama obat dan waktu tidak boleh kosong!");
+                        return;
+                    }
+                    const alarmData = {
+                        id: currentEditingAlarm.id,
+                        date: currentEditingAlarm.date,
+                        time: timeInput.value,
+                        medicine: medicineInput.value,
+                        notes: notesInput.value,
+                        recurring: document.querySelector('input[name="recurrence"]:checked').value,
+                        taken: currentEditingAlarm.id ? currentEditingAlarm.taken : false
+                    };
+                    saveAlarm(alarmData);
+                });
+
+                deleteAlarmBtn.addEventListener('click', () => {
+                    showConfirmation("Apakah Anda yakin ingin menghapus pengingat ini?", () => {
+                        deleteAlarm(currentEditingAlarm.id);
+                    });
+                });
+                
+                dismissAlarmBtn.addEventListener('click', dismissAlarm);
+                markAsTakenBtn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    const date = e.currentTarget.dataset.date;
+                    markAlarmAsTaken(id, date);
+                });
+                
+                window.addEventListener('click', (event) => { if (event.target === alarmModal) closeModal(); });
+            }
+
+            // --- START THE APP ---
+            init();
+        });
+    </script>
+
+</body>
+</html>
